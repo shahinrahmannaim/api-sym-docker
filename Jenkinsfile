@@ -11,29 +11,30 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install Composer in Docker
+                    // Install PHP and necessary extensions
+                    sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y php php-cli php-mbstring php-xml php-curl
+                    '''
+
+                    // Install Composer
                     sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer'
 
-                    // Install PHP dependencies
-                    sh 'apt-get update && apt-get install -y php php-cli php-mbstring php-xml php-curl'
-
-                    // Run Composer install
-                    sh 'composer install --no-interaction --prefer-dist'
+                    // Verify Composer installation
+                    sh 'composer --version'
                 }
             }
         }
 
         stage('Build Symfony Backend') {
             steps {
-                // Add build commands here
-                echo 'Building Symfony Backend'
+                echo 'Building Symfony Backend...'
             }
         }
 
         stage('Deploy Backend') {
             steps {
-                // Add deployment commands here
-                echo 'Deploying Symfony Backend'
+                echo 'Deploying Symfony Backend...'
             }
         }
     }
