@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         COMPOSER_HOME = '/root/.composer'
+        NETLIFY_AUTH_TOKEN = credentials('netlify-auth-token') // Use Jenkins credentials
+        NETLIFY_SITE_ID = credentials('netlify-site-id')
     }
 
     stages {
@@ -10,6 +12,13 @@ pipeline {
             steps {
                 echo 'Checking out the repository...'
                 checkout scm
+            }
+        }
+
+        stage('Prepare Environment') {
+            steps {
+                echo 'Copying Jenkins-specific .env file...'
+                sh 'cp .env.jenkins .env'
             }
         }
 
@@ -54,8 +63,14 @@ pipeline {
             steps {
                 script {
                     echo 'Building Symfony Backend...'
-                    sh 'php bin/console cache:clear --env=prod'
-                    sh 'php bin/console assets:install --env=prod'
+                    sh '''
+                    if [ -f .env ]; then
+                        php bin/console cache:clear --env=prod
+                        php bin/console assets:install --env=prod
+                    else
+                        echo ".env file not found. Skipping cache clear."
+                    fi
+                    '''
                 }
             }
         }
@@ -74,7 +89,6 @@ pipeline {
                 script {
                     echo 'Deploying to Netlify...'
                     sh '''
-                    # Netlify deployment (update with your Netlify site ID and authentication token)
                     netlify deploy --prod --dir=public --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
                     '''
                 }
@@ -86,7 +100,6 @@ pipeline {
                 script {
                     echo 'Deploying Symfony Backend...'
                     sh '''
-                    # Example deployment command (update with your server details)
                     rsync -avz --exclude="var/cache/*" ./ user@yourserver:/var/www/symfony_app
                     ssh user@yourserver "cd /var/www/symfony_app && php bin/console cache:clear --env=prod"
                     '''
