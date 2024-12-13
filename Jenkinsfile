@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         COMPOSER_HOME = '/root/.composer'
-        NETLIFY_AUTH_TOKEN = credentials('netlify-auth-token') // Use Jenkins credentials
-        NETLIFY_SITE_ID = credentials('netlify-site-id')
+        NETLIFY_AUTH_TOKEN = 'nfp_f3EV6r8ii3VM1GPrQaD5rXH688gzvMAN3492' // Your Netlify token
+        NETLIFY_SITE_ID = credentials('netlify-site-id') // Still using Jenkins credentials for site ID
     }
 
     stages {
