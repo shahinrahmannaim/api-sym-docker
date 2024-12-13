@@ -1,14 +1,23 @@
 pipeline {
     agent any
 
-    environment {
-        BACKEND_DIR = 'backend'
-    }
-
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                dir(BACKEND_DIR) {
+                script {
+                    // Install Composer in Docker
+                    sh 'curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer'
+
+                    // Install PHP dependencies
+                    sh 'apt-get update && apt-get install -y php php-cli php-mbstring php-xml php-curl'
+
+                    // Run Composer install
                     sh 'composer install --no-interaction --prefer-dist'
                 }
             }
@@ -16,31 +25,14 @@ pipeline {
 
         stage('Build Symfony Backend') {
             steps {
-                dir(BACKEND_DIR) {
-                    sh 'composer build'
-                }
-            }
-        }
-
-        stage('Test Symfony Backend') {
-            steps {
-                dir(BACKEND_DIR) {
-                    sh 'php bin/phpunit'
-                }
+                // Add build commands here
             }
         }
 
         stage('Deploy Backend') {
             steps {
-                // Deploy to your preferred environment (e.g., Docker, cloud)
-                echo 'Deploying Symfony Backend...'
+                // Add deployment commands here
             }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
