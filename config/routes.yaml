@@ -1,0 +1,16 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# home:
+#     path: /
+#     controller: App\Controller\HomeController::index 
+api_login_check:
+    path: /api/login_check
+# config/routes.yaml
+dashboard:
+    path: /admin
+    controller: App\Controller\Admin\DashboardController::index
+# config/routes/api.yaml

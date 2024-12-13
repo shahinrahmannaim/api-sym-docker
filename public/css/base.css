@@ -1,0 +1,64 @@
+/* Reset some basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Light background for the whole body */
+    color: #343a40; /* Dark text color */
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #007bff; /* Primary color for the navbar */
+    padding: 10px 20px;
+}
+
+.navbar-brand {
+    color: white; /* White text for links */
+    margin-right: 15px; /* Spacing between links */
+    text-decoration: none; /* Remove underline */
+}
+
+.navbar-brand:hover {
+    color: #ffc107; /* Change color on hover */
+}
+
+.navbar-brand.active {
+    font-weight: bold; /* Highlight the active link */
+}
+
+/* Container styling */
+.container {
+    max-width: 1200px; /* Set a maximum width for the container */
+    margin: 0 auto; /* Center align the container */
+    padding: 20px; /* Padding inside the container */
+    background: white; /* White background for the main content */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.my-4 {
+    margin-top: 1.5rem; /* Margin for spacing */
+    margin-bottom: 1.5rem; /* Margin for spacing */
+}
+
+/* Flash message styling */
+.flash {
+    padding: 10px; /* Padding for flash messages */
+    border-radius: 5px; /* Rounded corners */
+    margin-bottom: 15px; /* Margin below flash messages */
+}
+
+.flash.success {
+    background-color: #d4edda; /* Green background for success messages */
+    color: #155724; /* Dark text for success */
+}
+
+.flash.error {
+    background-color: #f8d7da; /* Red background for error messages */
+    color: #721c24; /* Dark text for error */
+}

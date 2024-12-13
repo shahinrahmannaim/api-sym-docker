@@ -1,0 +1,13 @@
+{# templates/admin/user_form.html.twig #}
+
+
+{% block title %}User Form{% endblock %}
+
+{% block body %}
+    <h1>{{ user is not null ? 'Edit User' : 'Create User' }}</h1>
+
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit">Save</button>
+    {{ form_end(form) }}
+{% endblock %}

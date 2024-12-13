@@ -1,0 +1,19 @@
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "Your Symfony project description",
+  "main": "app.js",
+  "scripts": {
+    "dev": "encore dev",
+    "watch": "encore dev --watch",
+    "build": "encore production"
+  },
+  "devDependencies": {
+    "@symfony/webpack-encore": "^1.8.2",
+    "css-loader": "^5.0.0",
+    "sass-loader": "^10.0.0",
+    "webpack-notifier": "^1.0.0"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}
