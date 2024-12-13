@@ -26,12 +26,14 @@ pipeline {
         stage('Build Symfony Backend') {
             steps {
                 // Add build commands here
+                echo 'Building Symfony Backend'
             }
         }
 
         stage('Deploy Backend') {
             steps {
                 // Add deployment commands here
+                echo 'Deploying Symfony Backend'
             }
         }
     }
