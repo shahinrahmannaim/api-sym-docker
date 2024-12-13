@@ -11,10 +11,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install PHP and necessary extensions
+                    // Install PHP and necessary extensions without sudo
                     sh '''
-                    sudo apt-get update
-                    sudo apt-get install -y php php-cli php-mbstring php-xml php-curl
+                    apt-get update
+                    apt-get install -y php php-cli php-mbstring php-xml php-curl
                     '''
 
                     // Install Composer
