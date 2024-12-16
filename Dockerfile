@@ -5,11 +5,12 @@ FROM php:8.3-fpm-alpine
 RUN apk --no-cache add \
     libpng-dev \
     libjpeg-turbo-dev \
-    libfreetype6-dev \
+    freetype-dev \
     bash \
     git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd opcache mysqli pdo pdo_mysql
+
 
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
