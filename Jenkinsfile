@@ -2,118 +2,102 @@ pipeline {
     agent any
 
     environment {
-        COMPOSER_HOME = '/root/.composer'
-        NETLIFY_AUTH_TOKEN = 'nfp_f3EV6r8ii3VM1GPrQaD5rXH688gzvMAN3492' // Your Netlify token
-        NETLIFY_SITE_ID = credentials('netlify-site-id') // Still using Jenkins credentials for site ID
+        // Set environment variables for your project
+        GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
+        DOCKER_IMAGE = 'coderscafe/symfony-api'
+        AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
+        AWS_REGION = 'N. Verginia'
+        AWS_CREDENTIALS = '699475946478'  // The ID for your Jenkins AWS credentials
+        DOCKER_HUB_CREDENTIALS = 'coderscafe'  // Jenkins credential ID for Docker Hub
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                echo 'Checking out the repository...'
-                checkout scm
+                // Clone the GitHub repository
+                git branch: 'main', url: "${GITHUB_REPO}"
             }
         }
 
-        stage('Prepare Environment') {
-            steps {
-                echo 'Copying Jenkins-specific .env file...'
-                sh 'cp .env.jenkins .env'
-            }
-        }
-
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Installing PHP and necessary extensions...'
-                    sh '''
-                    apt-get update
-                    apt-get install -y php php-cli php-mbstring php-xml php-curl unzip
-                    '''
-
-                    echo 'Installing Composer...'
-                    sh '''
-                    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-                    composer --version
-                    '''
-
-                    echo 'Installing Symfony dependencies...'
-                    sh 'composer install --no-interaction --prefer-dist'
+                    // Build the Docker image
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
                 }
             }
         }
 
-        stage('Install Netlify CLI') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    echo 'Installing Node.js and Netlify CLI...'
-                    sh '''
-                    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-                    apt-get install -y nodejs
-                    npm install -g netlify-cli
-                    '''
-
-                    echo 'Verifying Netlify CLI installation...'
-                    sh 'netlify --version'
+                    // Login to Docker Hub
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                            docker push ${DOCKER_IMAGE}
+                        '''
+                    }
                 }
             }
         }
 
-        stage('Build Symfony Backend') {
+        stage('AWS Login') {
             steps {
-                script {
-                    echo 'Building Symfony Backend...'
+                // Login to AWS ECR
+                withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}")]) {
                     sh '''
-                    if [ -f .env ]; then
-                        php bin/console cache:clear --env=prod
-                        php bin/console assets:install --env=prod
-                    else
-                        echo ".env file not found. Skipping cache clear."
-                    fi
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ECR}
                     '''
                 }
             }
         }
 
-        stage('Run Tests') {
+        stage('Push to ECR') {
             steps {
                 script {
-                    echo 'Running tests...'
-                    sh 'php bin/phpunit'
-                }
-            }
-        }
-
-        stage('Deploy to Netlify') {
-            steps {
-                script {
-                    echo 'Deploying to Netlify...'
+                    // Tag the Docker image for AWS ECR
                     sh '''
-                    netlify deploy --prod --dir=public --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
+                        docker tag ${DOCKER_IMAGE}:latest ${AWS_ECR}:latest
+                        docker push ${AWS_ECR}:latest
                     '''
                 }
             }
         }
 
-        stage('Deploy Backend') {
+        stage('Deploy to AWS EC2 / ECS') {
             steps {
                 script {
-                    echo 'Deploying Symfony Backend...'
+                    // Deploy to AWS EC2 or ECS depending on your setup
+
+                    // Example for ECS:
                     sh '''
-                    rsync -avz --exclude="var/cache/*" ./ user@yourserver:/var/www/symfony_app
-                    ssh user@yourserver "cd /var/www/symfony_app && php bin/console cache:clear --env=prod"
+                        ecs-cli configure --region ${AWS_REGION} --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY --cluster your-cluster-name
+                        ecs-cli compose --file docker-compose.yml --project-name symfony-app service up
                     '''
+                    // Or EC2:
+                    // You can SSH into EC2 and deploy Docker there.
+                    // Example:
+                    // sh 'ssh -i /path/to/key.pem ec2-user@your-ec2-ip "docker pull ${DOCKER_IMAGE} && docker run -d -p 80:80 ${DOCKER_IMAGE}"'
                 }
             }
         }
     }
 
     post {
-        success {
-            echo 'Build and deployment completed successfully!'
+        always {
+            // Cleanup actions (if needed)
+            echo 'Cleaning up...'
         }
+
+        success {
+            // Notify success or perform other actions after success
+            echo 'Pipeline completed successfully!'
+        }
+
         failure {
-            echo 'Build or deployment failed.'
+            // Notify failure or perform other actions after failure
+            echo 'Pipeline failed.'
         }
     }
 }
