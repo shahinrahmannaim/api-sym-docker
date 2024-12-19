@@ -10,7 +10,7 @@ pipeline {
         DOCKER_HUB_CREDENTIALS = 'coderscafe'
     }
 
-    stages {
+   stages {
         stage('Checkout') {
             steps {
                 // Checkout your GitHub repository
@@ -30,7 +30,7 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    // Login to Docker Hub
+                    // Login to Docker Hub and push the image
                     withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
                             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
@@ -44,7 +44,7 @@ pipeline {
         stage('AWS Login') {
             steps {
                 // Login to AWS ECR
-                withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}")]) {
+                withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                         aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ECR}
                     '''
@@ -67,17 +67,16 @@ pipeline {
         stage('Deploy to EC2 / ECS') {
             steps {
                 script {
-                    // Example for ECS
+                    // Example deployment to ECS
                     sh '''
                         ecs-cli configure --region ${AWS_REGION} --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY --cluster your-cluster-name
                         ecs-cli compose --file docker-compose.yml --project-name your-project-name service up
                     '''
                     
-                    // Or deploy to EC2 if you are not using ECS
-                    // You can SSH into your EC2 instance and deploy using Docker Compose
-                    sh '''
-                        ssh -i /path/to/key.pem ec2-user@your-ec2-ip "cd /path/to/project && docker-compose up -d"
-                    '''
+                    // Example deployment to EC2 (if not using ECS)
+                    // sh '''
+                    //     ssh -i /path/to/key.pem ec2-user@your-ec2-ip "cd /path/to/project && docker-compose up -d"
+                    // '''
                 }
             }
         }
@@ -85,7 +84,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up...'
+            echo 'Cleaning up workspace...'
+            deleteDir()
         }
 
         success {

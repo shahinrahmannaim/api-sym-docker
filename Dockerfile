@@ -11,7 +11,6 @@ RUN apk --no-cache add \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd opcache mysqli pdo pdo_mysql
 
-
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -24,8 +23,12 @@ COPY . /var/www/html/
 # Set the appropriate permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Install Composer dependencies (without dev dependencies and optimized for production)
+# Install Composer dependencies as www-data user (avoiding permission issues)
+USER www-data
 RUN composer install --no-dev --optimize-autoloader
+
+# Switch back to root user
+USER root
 
 # Expose the port that Symfony will run on
 EXPOSE 80
@@ -36,4 +39,3 @@ RUN mkdir -p /var/www/html/var/cache /var/www/html/var/logs /var/www/html/var/se
 
 # Use the PHP-FPM server to serve the application
 CMD ["php-fpm"]
-
