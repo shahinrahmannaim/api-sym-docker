@@ -1,39 +1,45 @@
-# Stage 1: Composer Build
-FROM composer:2.8.4 AS composer_build
+FROM composer:2.8.4 as composer_build
 
-# Set the working directory
 WORKDIR /app
-
-# Copy the source code into the container
 COPY . /app
+RUN composer install --optimize-autoloader --no-dev --ignore-platform-reqs --no-interaction --no-scripts --prefer-dist \
+    && composer require annotations
+# Use the official PHP 8.3 FPM image based on Alpine Linux for a smaller image size
+FROM php:8.3-fpm-alpine
 
-# Install Composer dependencies
-RUN composer install --optimize-autoloader --no-dev --ignore-platform-reqs --no-interaction --no-scripts --prefer-dist
+# Install system dependencies and PHP extensions
+RUN apk --no-cache add \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    bash \
+    git \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd opcache mysqli pdo pdo_mysql
 
-# Ensure the annotations package is installed (if required)
-RUN composer require annotations
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Stage 2: PHP-Apache Server
-FROM php:8.1.8-apache
+# Set working directory inside the container
+WORKDIR /var/www/html
 
-# Set the application home environment variable
-ENV APP_HOME /var/www/html
+# Copy the application files into the container
+COPY . /var/www/html/
 
-# Copy the built application from the previous stage
-COPY --from=composer_build /app/ /var/www/html/
+# Set the appropriate permissions
+RUN chown -R www-data:www-data /var/www/html
 
-# Update the Apache configuration
-RUN sed -i -e "s/html/html\/public/g" /etc/apache2/sites-enabled/000-default.conf \
-    && usermod -u 1000 www-data && groupmod -g 1000 www-data \
-    && chown -R www-data:www-data /var/www/html \
-    && a2enmod rewrite \
-    && sed -i "s/80/\${PORT}/g" /etc/apache2/sites-enabled/000-default.conf /etc/apache2/ports.conf
+# Clear the cache manually
+RUN rm -rf var/cache/*
 
-# Clear Symfony cache manually for production
-RUN php bin/console cache:clear --env=prod --no-debug
 
-# Set the entrypoint to be empty
-ENTRYPOINT []
 
-# Run Apache server in the foreground
-CMD ["docker-php-entrypoint", "apache2-foreground"]
+# Expose the port that Symfony will run on
+EXPOSE 80
+
+# Create necessary directories for Symfony (cache, logs, etc.)
+RUN mkdir -p /var/www/html/var/cache /var/www/html/var/logs /var/www/html/var/sessions \
+    && chown -R www-data:www-data /var/www/html/var
+
+# Use the PHP-FPM server to serve the application
+CMD ["php-fpm"]
