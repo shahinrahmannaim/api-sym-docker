@@ -1,14 +1,14 @@
 pipeline {
     agent any
 
-    environment {
-        GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
-        DOCKER_IMAGE = 'coderscafe/symfony-api'
-        AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
-        AWS_REGION = 'N. Verginia'
-        AWS_CREDENTIALS = '699475946478'  // The ID for your Jenkins AWS credentials
-        DOCKER_HUB_CREDENTIALS = 'coderscafe'
-    }
+environment {
+    GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
+    DOCKER_IMAGE = 'coderscafe/symfony-api'
+    AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
+    AWS_REGION = 'us-east-1'
+    AWS_CREDENTIALS = '699475946478'  // The ID for your Jenkins AWS credentials
+    DOCKER_HUB_CREDENTIALS = 'coderscafe'
+}
 
    stages {
         stage('Checkout') {
