@@ -1,16 +1,18 @@
 pipeline {
     agent any
 
-environment {
-    GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
-    DOCKER_IMAGE = 'coderscafe/symfony-api'
-    AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
-    AWS_REGION = 'us-east-1'
-    AWS_CREDENTIALS = '699475946478'  // The ID for your Jenkins AWS credentials
-    DOCKER_HUB_CREDENTIALS = 'coderscafe'
-}
+    environment {
+        GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
+        DOCKER_IMAGE = 'coderscafe/symfony-api'
+        AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
+        AWS_REGION = 'us-east-1'
+        AWS_CREDENTIALS = '699475946478'  // Replace with your AWS credentials ID in Jenkins
+        DOCKER_HUB_CREDENTIALS = 'coderscafe' // Replace with your Docker Hub credentials ID in Jenkins
+        CLUSTER_NAME = 'jenkins-symfony'  // Replace with your ECS cluster name
+        
+    }
 
-   stages {
+    stages {
         stage('Checkout') {
             steps {
                 // Checkout your GitHub repository
@@ -64,19 +66,16 @@ environment {
             }
         }
 
-        stage('Deploy to EC2 / ECS') {
+        stage('Deploy to ECS') {
             steps {
                 script {
-                    // Example deployment to ECS
-                    sh '''
-                        ecs-cli configure --region ${AWS_REGION} --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY --cluster your-cluster-name
-                        ecs-cli compose --file docker-compose.yml --project-name your-project-name service up
-                    '''
-                    
-                    // Example deployment to EC2 (if not using ECS)
-                    // sh '''
-                    //     ssh -i /path/to/key.pem ec2-user@your-ec2-ip "cd /path/to/project && docker-compose up -d"
-                    // '''
+                    // Configure ECS CLI and deploy
+                    withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            ecs-cli configure --region ${AWS_REGION} --cluster ${CLUSTER_NAME}
+                            ecs-cli compose --file docker-compose.yml --project-name ${PROJECT_NAME} service up
+                        '''
+                    }
                 }
             }
         }
