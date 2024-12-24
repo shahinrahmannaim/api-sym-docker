@@ -3,13 +3,10 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
-        DOCKER_IMAGE = 'coderscafe/symfony-api'
-        AWS_ECR = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
+        DOCKER_IMAGE = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
         AWS_REGION = 'us-east-1'
-        AWS_CREDENTIALS = '699475946478'  // Replace with your AWS credentials ID in Jenkins
-        DOCKER_HUB_CREDENTIALS = 'coderscafe' // Replace with your Docker Hub credentials ID in Jenkins
-        CLUSTER_NAME = 'jenkins-symfony'  // Replace with your ECS cluster name
-        
+        AWS_CREDENTIALS = 'AWS_CREDENTIAL_ID'  // Replace with your Jenkins AWS credentials ID
+        CLUSTER_NAME = 'jenkins-symfony'      // Replace with your ECS cluster name
     }
 
     stages {
@@ -29,39 +26,16 @@ pipeline {
             }
         }
 
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    // Login to Docker Hub and push the image
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh '''
-                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                            docker push ${DOCKER_IMAGE}
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('AWS Login') {
-            steps {
-                // Login to AWS ECR
-                withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh '''
-                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ECR}
-                    '''
-                }
-            }
-        }
-
         stage('Push to ECR') {
             steps {
                 script {
-                    // Tag and push the Docker image to AWS ECR
-                    sh '''
-                        docker tag ${DOCKER_IMAGE}:latest ${AWS_ECR}:latest
-                        docker push ${AWS_ECR}:latest
-                    '''
+                    // Login to AWS ECR
+                    withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${DOCKER_IMAGE}
+                            docker push ${DOCKER_IMAGE}:latest
+                        '''
+                    }
                 }
             }
         }
@@ -69,11 +43,11 @@ pipeline {
         stage('Deploy to ECS') {
             steps {
                 script {
-                    // Configure ECS CLI and deploy
+                    // Configure ECS CLI and deploy the service
                     withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                             ecs-cli configure --region ${AWS_REGION} --cluster ${CLUSTER_NAME}
-                            ecs-cli compose --file docker-compose.yml --project-name ${PROJECT_NAME} service up
+                            ecs-cli compose --file docker-compose.yml --project-name symfony-api service up
                         '''
                     }
                 }

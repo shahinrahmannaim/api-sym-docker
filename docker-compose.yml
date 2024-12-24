@@ -10,7 +10,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
 
   php:
-    build: .
+    image: .
     volumes:
       - ./:/code
 
