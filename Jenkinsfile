@@ -21,6 +21,7 @@ pipeline {
             steps {
                 script {
                     // Build Docker image using Dockerfile
+                    // Build Docker image using Dockerfile
                     sh 'docker build -t ${DOCKER_IMAGE} .'
                 }
             }
