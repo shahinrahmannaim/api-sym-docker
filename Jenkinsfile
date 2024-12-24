@@ -5,7 +5,7 @@ pipeline {
         GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
         DOCKER_IMAGE = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
         AWS_REGION = 'us-east-1'
-        AWS_CREDENTIALS = 'AWS_CREDENTIAL_ID'  // Replace with your Jenkins AWS credentials ID
+        AWS_CREDENTIALS = '699475946478'  // Replace with your Jenkins AWS credentials ID
         CLUSTER_NAME = 'jenkins-symfony'      // Replace with your ECS cluster name
     }
 
@@ -21,8 +21,7 @@ pipeline {
             steps {
                 script {
                     // Build Docker image using Dockerfile
-                    // Build Docker image using Dockerfile
-                    // Build Docker image using Dockerfile
+                  
                     sh 'docker build -t ${DOCKER_IMAGE} .'
                 }
             }
