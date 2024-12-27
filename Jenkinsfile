@@ -22,17 +22,18 @@ pipeline {
                     echo 'Checking or creating ECS cluster...'
                     withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh """
-                            # Check if the cluster exists
-                            CLUSTER_STATUS=$(aws ecs describe-clusters --clusters ${CLUSTER_NAME} --query 'clusters[0].status' --output text --region ${AWS_REGION} || echo 'MISSING')
+    # Check if the cluster exists
+    CLUSTER_STATUS=\$(aws ecs describe-clusters --clusters ${CLUSTER_NAME} --query 'clusters[0].status' --output text --region ${AWS_REGION} || echo 'MISSING')
 
-                            if [ "$CLUSTER_STATUS" = "MISSING" ]; then
-                                echo "Cluster does not exist. Creating ECS cluster..."
-                                aws ecs create-cluster --cluster-name ${CLUSTER_NAME} --region ${AWS_REGION}
-                                echo "Cluster ${CLUSTER_NAME} created successfully."
-                            else
-                                echo "Cluster ${CLUSTER_NAME} exists with status: $CLUSTER_STATUS"
-                            fi
-                        """
+    if [ "\$CLUSTER_STATUS" = "MISSING" ]; then
+        echo "Cluster does not exist. Creating ECS cluster..."
+        aws ecs create-cluster --cluster-name ${CLUSTER_NAME} --region ${AWS_REGION}
+        echo "Cluster ${CLUSTER_NAME} created successfully."
+    else
+        echo "Cluster ${CLUSTER_NAME} exists with status: \$CLUSTER_STATUS"
+    fi
+"""
+
                     }
                 }
             }
