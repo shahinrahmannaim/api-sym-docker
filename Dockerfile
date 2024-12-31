@@ -4,6 +4,8 @@ WORKDIR /app
 COPY . /app
 RUN composer install --optimize-autoloader --no-dev --ignore-platform-reqs --no-interaction --no-scripts --prefer-dist \
     && composer require annotations
+USER root
+RUN apt-get update && apt-get install -y docker.io
 
 # Use the official PHP 8.3 FPM image based on Alpine Linux
 FROM php:8.3-fpm-alpine

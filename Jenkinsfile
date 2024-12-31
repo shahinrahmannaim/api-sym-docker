@@ -4,7 +4,7 @@ pipeline {
     environment {
         GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
         DOCKER_IMAGE = 'symfony-api'  // Docker image name for local build
-        HEROKU_APP_NAME = 'symfony-heroku'  // Replace with your Heroku app name
+        HEROKU_APP_NAME = 'symfony-heroki'  // Replace with your Heroku app name
         HEROKU_API_KEY = credentials('HEROKU_API_KEY')  // Add Heroku API key to Jenkins credentials
     }
 
