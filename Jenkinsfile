@@ -3,39 +3,15 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'https://github.com/shahinrahmannaim/api-sym-docker.git'
-        DOCKER_IMAGE = '699475946478.dkr.ecr.us-east-1.amazonaws.com/symfony-api'
-        AWS_REGION = 'us-east-1'
-        AWS_CREDENTIALS = '699475946478'  // Replace with your Jenkins AWS credentials ID
-        CLUSTER_NAME = 'jenkins-symfony'       // Replace with your ECS cluster name
+        DOCKER_IMAGE = 'symfony-api'  // Docker image name for local build
+        HEROKU_APP_NAME = 'symfony-heroku'  // Replace with your Heroku app name
+        HEROKU_API_KEY = credentials('HEROKU_API_KEY')  // Add Heroku API key to Jenkins credentials
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main', url: "${GITHUB_REPO}"
-            }
-        }
-
-        stage('Create ECS Cluster') {
-            steps {
-                script {
-                    echo 'Checking or creating ECS cluster...'
-                    withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh """
-    # Check if the cluster exists
-    CLUSTER_STATUS=\$(aws ecs describe-clusters --clusters ${CLUSTER_NAME} --query 'clusters[0].status' --output text --region ${AWS_REGION} || echo 'MISSING')
-
-    if [ "\$CLUSTER_STATUS" = "MISSING" ]; then
-        echo "Cluster does not exist. Creating ECS cluster..."
-        aws ecs create-cluster --cluster-name ${CLUSTER_NAME} --region ${AWS_REGION}
-        echo "Cluster ${CLUSTER_NAME} created successfully."
-    else
-        echo "Cluster ${CLUSTER_NAME} exists with status: \$CLUSTER_STATUS"
-    fi
-"""
-
-                    }
-                }
             }
         }
 
@@ -50,30 +26,36 @@ pipeline {
             }
         }
 
-        stage('Push to ECR') {
+        stage('Login to Heroku') {
             steps {
                 script {
-                    echo 'Pushing Docker image to ECR...'
-                    withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh """
-                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${DOCKER_IMAGE}
-                            docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }
+                    echo 'Logging into Heroku container registry...'
+                    sh """
+                        echo ${HEROKU_API_KEY} | docker login --username=_ --password-stdin registry.heroku.com
+                    """
                 }
             }
         }
 
-        stage('Deploy to ECS') {
+        stage('Tag and Push Docker Image to Heroku') {
             steps {
                 script {
-                    echo 'Deploying to ECS...'
-                    withCredentials([aws(credentialsId: "${AWS_CREDENTIALS}", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh """
-                            ecs-cli configure --region ${AWS_REGION} --cluster ${CLUSTER_NAME}
-                            ecs-cli compose --file docker-compose.yml --project-name symfony-api service up
-                        """
-                    }
+                    echo 'Tagging and pushing Docker image to Heroku...'
+                    sh """
+                        docker tag ${DOCKER_IMAGE}:latest registry.heroku.com/${HEROKU_APP_NAME}/web
+                        docker push registry.heroku.com/${HEROKU_APP_NAME}/web
+                    """
+                }
+            }
+        }
+
+        stage('Release Heroku App') {
+            steps {
+                script {
+                    echo 'Releasing Heroku app...'
+                    sh """
+                        heroku container:release web --app ${HEROKU_APP_NAME}
+                    """
                 }
             }
         }
@@ -86,7 +68,7 @@ pipeline {
         }
 
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline completed successfully! Heroku app is deployed.'
         }
 
         failure {
