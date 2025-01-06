@@ -13,7 +13,7 @@ pipeline {
             steps {
                 script {
                     echo 'Installing Docker CLI...'
-                    sh """
+                    sh '''
                         # Update package list and install Docker CLI
                         sudo apt-get update
                         sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -21,7 +21,7 @@ pipeline {
                         sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
                         sudo apt-get update
                         sudo apt-get install -y docker-ce
-                    """
+                    '''
                 }
             }
         }
@@ -36,9 +36,9 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    sh """
+                    sh '''
                         docker build -t ${DOCKER_IMAGE}:latest .
-                    """
+                    '''
                 }
             }
         }
@@ -47,9 +47,9 @@ pipeline {
             steps {
                 script {
                     echo 'Logging into Heroku container registry...'
-                    sh """
+                    sh '''
                         echo ${HEROKU_API_KEY} | docker login --username=_ --password-stdin registry.heroku.com
-                    """
+                    '''
                 }
             }
         }
@@ -58,10 +58,10 @@ pipeline {
             steps {
                 script {
                     echo 'Tagging and pushing Docker image to Heroku...'
-                    sh """
+                    sh '''
                         docker tag ${DOCKER_IMAGE}:latest registry.heroku.com/${HEROKU_APP_NAME}/web
                         docker push registry.heroku.com/${HEROKU_APP_NAME}/web
-                    """
+                    '''
                 }
             }
         }
@@ -70,9 +70,9 @@ pipeline {
             steps {
                 script {
                     echo 'Releasing Heroku app...'
-                    sh """
+                    sh '''
                         heroku container:release web --app ${HEROKU_APP_NAME}
-                    """
+                    '''
                 }
             }
         }
